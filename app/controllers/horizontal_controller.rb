@@ -1,0 +1,2 @@
+class HorizontalController < ApplicationController
+end
