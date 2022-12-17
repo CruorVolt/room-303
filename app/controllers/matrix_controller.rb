@@ -1,2 +1,0 @@
-class MatrixController < ApplicationController
-end

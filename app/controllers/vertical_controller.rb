@@ -1,2 +1,0 @@
-class VerticalController < ApplicationController
-end
