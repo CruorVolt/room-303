@@ -8,9 +8,9 @@ function MessageSource() {
 
     this.messageInterval = setInterval(() => {
         this.listeners.forEach((handler) => {
-            handler("HELLO");
+            handler("HELLO...   ");
         })
-    }, 100);
+    }, 10);
 }
 
 export { MessageSource }

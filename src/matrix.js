@@ -63,7 +63,7 @@ function Matrix() {
             context.fillStyle = "rgba(0, 0, 0, 0.3)"; //Background color and fadeout speed
             context.fillRect(0, 0, canvas.width, canvas.height);
             context.fillStyle = getGreen(); 
-            context.font = (size+5) + "px ocramedium";
+            context.font = (size+5) + "px matrix";
             context.fillText(init_message[index], (canvas.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.height / 3); 
             dialIndex += 1;
             
@@ -89,7 +89,7 @@ function Matrix() {
             context.fillRect(0, 0, canvas.width, canvas.height);
             
             context.fillStyle = "#0F0"; //green
-            context.font = size + "px ocramedium";
+            context.font = size + "px matrix";
 
             for(var i = 0; i < lines.length; i++) {
                 var tweet = tweets[i]
