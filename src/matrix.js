@@ -1,8 +1,7 @@
 /*
  * @author Anders Lundgren
  *
- * This script covers the canvas animations and tweet collection duties.
- * It was inspired by Ryan Henszey's demo of canvas animation at http://timelessname.com/sandbox/matrix.html.
+ * Inspired by Ryan Henszey's demo of canvas animation at http://timelessname.com/sandbox/matrix.html.
  */
 
 import { useEffect } from 'react';
@@ -11,17 +10,17 @@ import { MessageSource } from './message_source';
 function Matrix() {
 
     useEffect(() => {
-        var tweetEvents = [];
+        var messageEvents = [];
         var stream;
         if (!document.getElementById("displayCanvas")) {
             return; //No need for streaming on this page
         }
 
         var vertical = false;  //Whether to scroll vertically or horizontally
-        var painting = false; //Whether tweet painting has begun
+        var painting = false; //Whether painting has begun
         var dialInterval;     //The setInterval for controlling dialing animation
         var dialIndex = 0;    //The current character displayed by dialing animation
-        var received = 0;     //How many tweet events the EventListener has seen
+        var received = 0;     //How many messages we've seen
 
         //Controls the message density.
         var restartThreshhold = 0.97; 
@@ -29,17 +28,16 @@ function Matrix() {
         var init_message = "#DIALING.....".split("");
 
         const handleMessage = (message) => {
-            if (tweetEvents.length >= 200) { //Store the last 200 tweets
-                tweetEvents.shift()
+            if (messageEvents.length >= 200) { //Store the last 200 messages
+                messageEvents.shift()
             }
-            tweetEvents.push(message);
+            messageEvents.push(message);
             received += 1;
         }
         const source = new MessageSource();
         source.addListener(handleMessage);
 
         var canvas = document.getElementById("displayCanvas");
-        console.log(canvas);
         var context = canvas.getContext("2d");
 
         //if (direction === "vertical") {
@@ -54,7 +52,7 @@ function Matrix() {
         var rows = canvas.height / size;
         var cols = canvas.width / size;
 
-        var tweets = []; //2D collection of string messages
+        var messages = []; //2D collection of string messages
         var lines = [];
 
         //Write the loading ticker
@@ -67,12 +65,12 @@ function Matrix() {
             context.fillText(init_message[index], (canvas.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.height / 3); 
             dialIndex += 1;
             
-            //Start displaying tweets once there are enough to fill the screen
+            //Start displaying messages once there are enough to fill the screen
             if ( (received >= rows) && !painting) {
 
                 for(var x = 0; x < canvasSize(true); x++) {
                     lines[x] = Math.floor(Math.random() * canvasSize(false)); 
-                    tweets[x] = tweetEvents[Math.floor(Math.random() * tweetEvents.length)];
+                    messages[x] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
                 }
                 painting = true;
                 setInterval(paint, 100);
@@ -92,9 +90,9 @@ function Matrix() {
             context.font = size + "px matrix";
 
             for(var i = 0; i < lines.length; i++) {
-                var tweet = tweets[i]
-                var currentChar = tweet[lines[i] % tweet.length];
-                var previousChar = tweet[(lines[i]-1) % tweet.length];
+                var message = messages[i]
+                var currentChar = message[lines[i] % message.length];
+                var previousChar = message[(lines[i]-1) % message.length];
 
                 if (vertical) {
                     context.fillStyle = "#FFF"; //white
@@ -105,7 +103,7 @@ function Matrix() {
                     //Randomly stagger resetting the line
                     if(lines[i]*size > canvas.height && Math.random() > restartThreshhold) {
                         lines[i] = 0;
-                        tweets[i] = tweetEvents[Math.floor(Math.random() * tweetEvents.length)];
+                        messages[i] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
                     }
                 } else {
                     context.fillStyle = "#FFF"; //white
@@ -116,7 +114,7 @@ function Matrix() {
                     //Randomly stagger resetting the line
                     if(lines[i]*size > canvas.width && Math.random() > restartThreshhold) {
                         lines[i] = 0;
-                        tweets[i] = tweetEvents[Math.floor(Math.random() * tweetEvents.length)];
+                        messages[i] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
                     }
                 }
                 
