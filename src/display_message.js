@@ -1,7 +1,7 @@
 export default class DisplayMessage {
 
     constructor(message) {
-        this.text = message;
+        this.text = message + "   ";
         this.currentIdx = 0;
     }
 
@@ -10,7 +10,7 @@ export default class DisplayMessage {
     }
 
     next() {
-        this.currentIdx = (this.currentIdx + 1) % this.text.length;
+        this.currentIdx = (this.currentIdx + 1);
         return this.current();
     }
 
