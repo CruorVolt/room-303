@@ -4,122 +4,143 @@
  * Inspired by Ryan Henszey's demo of canvas animation at http://timelessname.com/sandbox/matrix.html.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MessageSource } from './message_source';
+import DisplayMessage from './display_message';
 
 function Matrix() {
 
+    var paint;
+    var vertical = true;  //Whether to scroll vertically or horizontally
+
+    //Messages buffered from the server
+    const messageQueue = useRef([]);
+
+    //Messages currently displaying
+    const currentDisplayMessages = useRef([]);
+
+    const canvas = useRef(null);
+    const dialIndex = useRef(0);    //The current character displayed by dialing animation
+
+    const paintInterval = useRef(null);
+    const resizeTimer = useRef(null);
+
+    const [maxMessages, setMaxMessages] = useState(100);
+
+    const size = 13;
+    const alpha = size / 200
+
     useEffect(() => {
-        var messageEvents = [];
-        var stream;
-        if (!document.getElementById("displayCanvas")) {
-            return; //No need for streaming on this page
-        }
 
-        var vertical = false;  //Whether to scroll vertically or horizontally
-        var painting = false; //Whether painting has begun
-        var dialInterval;     //The setInterval for controlling dialing animation
-        var dialIndex = 0;    //The current character displayed by dialing animation
-        var received = 0;     //How many messages we've seen
-
-        //Controls the message density.
-        var restartThreshhold = 0.97; 
-
-        var init_message = "#DIALING.....".split("");
+        window.addEventListener('resize', resize);
+        resize();
 
         const handleMessage = (message) => {
-            if (messageEvents.length >= 200) { //Store the last 200 messages
-                messageEvents.shift()
+            if (messageQueue.current.length >= maxMessages) { //Store the last 200 messages
+                messageQueue.current.shift()
             }
-            messageEvents.push(message);
-            received += 1;
+            messageQueue.current.push(message);
         }
         const source = new MessageSource();
         source.addListener(handleMessage);
 
-        var canvas = document.getElementById("displayCanvas");
-        var context = canvas.getContext("2d");
+        return () => { 
+            source.close(); 
+            //window.removeEventListener('resize');
+            clearInterval(paintInterval.current);
+        };
 
-        //if (direction === "vertical") {
-            vertical = true;
-        //}
+    }, [])
 
-        canvas.height = window.innerHeight;
-        canvas.width = window.innerWidth;
+    useEffect(() => {
+        paintInterval.current && clearInterval(paintInterval.current);
+        paintInterval.current = setInterval(paint, 100);
+    }, [maxMessages]);
 
-        var size = 13;
-        var alpha = size / 200
-        var rows = canvas.height / size;
-        var cols = canvas.width / size;
+    const resize = () => {
 
-        var messages = []; //2D collection of string messages
-        var lines = [];
+        resizeTimer.current && clearTimeout(resizeTimer.current);
 
-        //Write the loading ticker
-        function dial() {
-            let index = dialIndex % init_message.length;
+        resizeTimer.current = setTimeout(() => {
+            canvas.current = document.getElementById("displayCanvas");
+
+            canvas.current.height = window.innerHeight;
+            canvas.current.width = window.innerWidth;
+
+            var canvasSize = Math.floor(vertical ? (canvas.current.width / size) : (canvas.current.height / size));
+            messageQueue.current = messageQueue.current.slice(0, canvasSize);
+            setMaxMessages(canvasSize);
+
+            console.log(canvasSize);
+        }, 500)
+
+    }
+
+    paint = () => {
+        var context = canvas.current.getContext("2d");
+
+        //Controls the message density.
+        //var restartThreshhold = 0.97; 
+
+        var init_message = "#DIALING.....".split("");
+
+        //console.log(messageQueue.current.length + ":" + maxMessages);
+        console.log(maxMessages);
+        if (messageQueue.current.length < maxMessages) { //Show dialing message
+
+            let index = dialIndex.current % init_message.length;
             context.fillStyle = "rgba(0, 0, 0, 0.3)"; //Background color and fadeout speed
-            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillRect(0, 0, canvas.current.width, canvas.current.height);
             context.fillStyle = getGreen(); 
             context.font = (size+5) + "px matrix";
-            context.fillText(init_message[index], (canvas.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.height / 3); 
-            dialIndex += 1;
+            context.fillText(init_message[index], (canvas.current.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.current.height / 3); 
+            dialIndex.current += 1;
             
-            //Start displaying messages once there are enough to fill the screen
-            if ( (received >= rows) && !painting) {
+        } else { //Stream message contents
 
-                for(var x = 0; x < canvasSize(true); x++) {
-                    lines[x] = Math.floor(Math.random() * canvasSize(false)); 
-                    messages[x] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
-                }
-                painting = true;
-                setInterval(paint, 100);
-                clearInterval(dialInterval);
-                return
-            }
-        }
-
-        //Write a line incrementally down the screen
-        function paint()
-        {
             //Background is colored and translucent
             context.fillStyle = "rgba(0, 0, 0, " + alpha + ")"; //Background color and fadeout speed
-            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillRect(0, 0, canvas.current.width, canvas.current.height);
             
             context.fillStyle = "#0F0"; //green
             context.font = size + "px matrix";
 
-            for(var i = 0; i < lines.length; i++) {
-                var message = messages[i]
-                var currentChar = message[lines[i] % message.length];
-                var previousChar = message[(lines[i]-1) % message.length];
+            for(let i = 0; i < maxMessages; i++) {
+
+                if (!currentDisplayMessages[i]) {
+                    currentDisplayMessages[i] = new DisplayMessage(messageQueue.current.shift())
+                }
+
+                var message = currentDisplayMessages[i];
 
                 if (vertical) {
-                    context.fillStyle = "#FFF"; //white
-                    context.fillText(currentChar, i*size, (lines[i]*size)+size); //Write newest char illuminated
                     context.fillStyle = getGreen(); //green
-                    context.fillText(previousChar, i*size, ((lines[i]-1)*size)+size); //Rewrite previous char in green
+                    context.fillText(message.current(), i*size, (message.getIdx() * size) + size); //Rewrite previous char in green
+                    context.fillStyle = "#FFF"; //white
+                    context.fillText(message.next(), i*size, (message.getIdx() * size) + size); //Write newest char illuminated
 
                     //Randomly stagger resetting the line
-                    if(lines[i]*size > canvas.height && Math.random() > restartThreshhold) {
+                    /*
+                    if(lines[i]*size > canvas.current.height && Math.random() > restartThreshhold) {
                         lines[i] = 0;
                         messages[i] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
                     }
+                    */
                 } else {
-                    context.fillStyle = "#FFF"; //white
-                    context.fillText(currentChar, lines[i]*size, i*size); //Write newest char illuminated
                     context.fillStyle = getGreen(); //green
-                    context.fillText(previousChar, (lines[i]-1)*size, i*size); //Rewrite previous char in green
+                    context.fillText(message.current(), (message.getIdx())*size, i*size); //Rewrite previous char in green
+                    context.fillStyle = "#FFF"; //white
+                    context.fillText(message.next(), message.getIdx()*size, i*size); //Write newest char illuminated
 
                     //Randomly stagger resetting the line
-                    if(lines[i]*size > canvas.width && Math.random() > restartThreshhold) {
+                    /*
+                    if(lines[i]*size > canvas.current.width && Math.random() > restartThreshhold) {
                         lines[i] = 0;
                         messages[i] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
                     }
+                    */
                 }
                 
-                //incrementing scrolling coordinate
-                lines[i]++;
             }
         }
 
@@ -129,18 +150,7 @@ function Matrix() {
             return "#5" + hex[Math.floor(Math.random() * hex.length)]+"5";
         }
 
-        function canvasSize(scroll_dir) {
-            if (vertical) {
-                return (scroll_dir) ? cols : rows;
-            } else {
-                return (scroll_dir) ? rows : cols;
-            }
-        }
-
-        dialInterval = setInterval(dial, 150);
-
-
-    }, [])
+    };
 
     return <canvas id='displayCanvas'/>;
 }
