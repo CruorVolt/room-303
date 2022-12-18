@@ -39,10 +39,10 @@ function Matrix() {
         return "#5" + hex[Math.floor(Math.random() * hex.length)]+"5";
     }
 
+
     useEffect(() => {
 
         window.addEventListener('resize', resize);
-        resize();
 
         const handleMessage = (message) => {
             if (messageQueue.current.length >= maxMessages) { //Store the last 200 messages
@@ -53,18 +53,14 @@ function Matrix() {
         const source = new MessageSource();
         source.addListener(handleMessage);
 
-        return () => { 
-            source.close(); 
-            //window.removeEventListener('resize');
-            clearInterval(paintInterval.current);
-        };
-
-    }, [])
-
-    useEffect(() => {
-
         paintInterval.current && clearInterval(paintInterval.current);
         paintInterval.current = setInterval(dial, 100);
+
+        return () => { 
+            source.close(); 
+            window.removeEventListener('resize', resize);
+            clearInterval(paintInterval.current);
+        };
 
     }, [maxMessages]);
 
@@ -93,21 +89,24 @@ function Matrix() {
 
     }
 
+    useEffect(resize, []);
+
     dial = () => {
         let init_message = "#DIALING.....".split("");
         let index = dialIndex.current % init_message.length;
-        let context = canvas.current.getContext("2d");
-        context.fillStyle = "rgba(0, 0, 0, 0.3)"; //Background color and fadeout speed
-        context.fillRect(0, 0, canvas.current.width, canvas.current.height);
-        context.fillStyle = getGreen(); 
-        context.font = (size+5) + "px matrix";
-        context.fillText(init_message[index], (canvas.current.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.current.height / 3); 
-        dialIndex.current += 1;
+        if (canvas.current) {
+            let context = canvas.current.getContext("2d");
+            context.fillStyle = "rgba(0, 0, 0, 0.3)"; //Background color and fadeout speed
+            context.fillRect(0, 0, canvas.current.width, canvas.current.height);
+            context.fillStyle = getGreen(); 
+            context.font = (size+5) + "px matrix";
+            context.fillText(init_message[index], (canvas.current.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.current.height / 3); 
+            dialIndex.current += 1;
 
-        console.log(messageQueue.current.length + ":" + maxMessages);
-        if (messageQueue.current.length >= maxMessages) { //Show dialing message
-            paintInterval.current && clearInterval(paintInterval.current);
-            paintInterval.current = setInterval(stream, 100);
+            if (messageQueue.current.length >= maxMessages) { //Show dialing message
+                paintInterval.current && clearInterval(paintInterval.current);
+                paintInterval.current = setInterval(stream, 100);
+            }
         }
     }
 
@@ -131,6 +130,10 @@ function Matrix() {
             }
 
             var message = currentDisplayMessages.current[i];
+
+            if ((message.current() == 0) && (Math.random() < 0.5)) {
+                continue;
+            }
 
             if (vertical) {
                 context.fillStyle = getGreen(); //green
