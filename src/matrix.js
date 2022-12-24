@@ -12,7 +12,7 @@ function Matrix() {
 
     var stream;
     var dial;
-    var vertical = true;  //Whether to scroll vertically or horizontally
+    var vertical = false;  //Whether to scroll vertically or horizontally
 
     //Messages buffered from the server
     const messageQueue = useRef([]);
@@ -111,7 +111,7 @@ function Matrix() {
 
             if (messageQueue.current.length >= maxMessages) { //Show dialing message
                 paintInterval.current && clearInterval(paintInterval.current);
-                paintInterval.current = setInterval(stream, 100);
+                paintInterval.current = setInterval(stream, 75);
             }
         }
     }
