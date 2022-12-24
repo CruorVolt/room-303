@@ -4,7 +4,6 @@ function MessageSource() {
 
     // Listen for messages
     this.connection.addEventListener('message', (event) => {
-        console.log('Message from server ', event.data);
         this.listeners.forEach((handler) => {
             handler(event.data);
         })

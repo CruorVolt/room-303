@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { MessageSource } from './message_source_test';
+import { MessageSource } from './message_source';
 import DisplayMessage from './display_message';
 
 function Matrix() {
@@ -120,9 +120,6 @@ function Matrix() {
         let cleanupLag = 50;
         let context = canvas.current.getContext("2d");
 
-        //Controls the message density.
-        //var restartThreshhold = 0.97; 
-
         //Background is colored and translucent
         context.fillStyle = "rgba(0, 0, 0, " + alpha + ")"; //Background color and fadeout speed
         context.fillRect(0, 0, canvas.current.width, canvas.current.height);
@@ -133,7 +130,12 @@ function Matrix() {
         for(let i = 0; i < maxMessages; i++) {
 
             if (!currentDisplayMessages.current[i]) {
-                currentDisplayMessages.current[i] = new DisplayMessage(messageQueue.current.shift())
+                let nextMessage = messageQueue.current.shift();
+                if (nextMessage) {
+                    currentDisplayMessages.current[i] = new DisplayMessage(nextMessage);
+                } else {
+                    continue;
+                }
             }
 
             var message = currentDisplayMessages.current[i];

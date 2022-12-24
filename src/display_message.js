@@ -3,6 +3,7 @@ export default class DisplayMessage {
     constructor(message) {
         this.text = message + "   ";
         this.currentIdx = 0;
+        this.offset = Math.floor(Math.random() * 5);
     }
 
     current() {
@@ -15,7 +16,7 @@ export default class DisplayMessage {
     }
 
     getIdx() {
-        return this.currentIdx;
+        return this.currentIdx + this.offset;
     }
 
 }

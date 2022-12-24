@@ -61,9 +61,10 @@ wss.on("connection", ws => {
       
       const submissions = new SnooStorm.SubmissionStream(client, {
         subreddit: "Popular",
-        limit: 10,
+        limit: 100,
         pollTime: 2000,
       });
+
       submissions.on("item", (item) => {
         let message = item.subreddit.display_name + ": " + item.title;
         ws.send(message);
