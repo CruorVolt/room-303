@@ -32,17 +32,14 @@ function Matrix() {
     const size = 13;
     const alpha = size / 200
 
-
     //get the hex string for a random shade of light green
     const getGreen = () => {
         var hex = "ABCDEF".split("");
         return "#5" + hex[Math.floor(Math.random() * hex.length)]+"5";
     }
 
-
+    //Manage data source
     useEffect(() => {
-
-        window.addEventListener('resize', resize);
 
         const handleMessage = (message) => {
             if (messageQueue.current.length >= maxMessages) { //Store the last 200 messages
@@ -53,11 +50,20 @@ function Matrix() {
         const source = new MessageSource();
         source.addListener(handleMessage);
 
+        return () => {
+            source.close(); 
+        };
+
+    }, [])
+
+    useEffect(() => {
+
+        window.addEventListener('resize', resize);
+
         paintInterval.current && clearInterval(paintInterval.current);
         paintInterval.current = setInterval(dial, 100);
 
         return () => { 
-            source.close(); 
             window.removeEventListener('resize', resize);
             clearInterval(paintInterval.current);
         };
@@ -141,26 +147,12 @@ function Matrix() {
                 context.fillStyle = "#FFF"; //white
                 context.fillText(message.next(), i*size, (message.getIdx() * size) + size); //Write newest char illuminated
 
-                //Randomly stagger resetting the line
-                /*
-                if(lines[i]*size > canvas.current.height && Math.random() > restartThreshhold) {
-                    lines[i] = 0;
-                    messages[i] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
-                }
-                */
             } else {
                 context.fillStyle = getGreen(); //green
                 context.fillText(message.current(), (message.getIdx())*size, i*size); //Rewrite previous char in green
                 context.fillStyle = "#FFF"; //white
                 context.fillText(message.next(), message.getIdx()*size, i*size); //Write newest char illuminated
 
-                //Randomly stagger resetting the line
-                /*
-                if(lines[i]*size > canvas.current.width && Math.random() > restartThreshhold) {
-                    lines[i] = 0;
-                    messages[i] = messageEvents[Math.floor(Math.random() * messageEvents.length)];
-                }
-                */
             }
 
             if (message.getIdx() >= maxIdx) {
