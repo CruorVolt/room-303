@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { MessageSource } from './message_source';
+import { MessageSource } from './message_source_test';
 import DisplayMessage from './display_message';
 
 function Matrix() {
@@ -117,6 +117,7 @@ function Matrix() {
     }
 
     stream = () => {
+        let cleanupLag = 50;
         let context = canvas.current.getContext("2d");
 
         //Controls the message density.
@@ -142,20 +143,27 @@ function Matrix() {
             }
 
             if (vertical) {
+                context.fillStyle = "#000"; //black
+                context.fillRect(i*size - size + 1, (message.getIdx()-cleanupLag)*size,size, size);
+
                 context.fillStyle = getGreen(); //green
                 context.fillText(message.current(), i*size, (message.getIdx() * size) + size); //Rewrite previous char in green
                 context.fillStyle = "#FFF"; //white
                 context.fillText(message.next(), i*size, (message.getIdx() * size) + size); //Write newest char illuminated
 
             } else {
+                context.fillStyle = "#000"; //black
+                context.fillRect((message.getIdx()-cleanupLag)*size, i*size - size + 1, size, size);
+
                 context.fillStyle = getGreen(); //green
                 context.fillText(message.current(), (message.getIdx())*size, i*size); //Rewrite previous char in green
                 context.fillStyle = "#FFF"; //white
                 context.fillText(message.next(), message.getIdx()*size, i*size); //Write newest char illuminated
 
+
             }
 
-            if (message.getIdx() >= maxIdx) {
+            if (message.getIdx() >= (maxIdx + cleanupLag)) {
                 currentDisplayMessages.current[i] = null;
             }
             
