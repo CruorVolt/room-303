@@ -144,6 +144,7 @@ function Matrix() {
                 continue;
             }
 
+
             if (vertical) {
                 context.fillStyle = "#000"; //black
                 context.fillRect(i*size - size + 1, (message.getIdx()-cleanupLag)*size,size, size);
