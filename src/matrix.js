@@ -5,13 +5,15 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { MessageSource } from './message_source';
+import { MessageSource } from './message_source_test';
 import DisplayMessage from './display_message';
 
 function Matrix() {
 
-    var stream;
-    var dial;
+    const size = 13;
+    const alpha = size / 200
+    const maxMessageDensity = 1.5;
+
     var vertical = false;  //Whether to scroll vertically or horizontally
 
     //Messages buffered from the server
@@ -26,49 +28,14 @@ function Matrix() {
     const paintInterval = useRef(null);
     const resizeTimer = useRef(null);
 
-    const [maxMessages, setMaxMessages] = useState(100);
+    const [numberOfDisplayRows, setNumberOfDisplayRows] = useState(100);
     const [maxIdx, setMaxIdx] = useState(100);
-
-    const size = 13;
-    const alpha = size / 200
 
     //get the hex string for a random shade of light green
     const getGreen = () => {
         var hex = "ABCDEF".split("");
         return "#5" + hex[Math.floor(Math.random() * hex.length)]+"5";
     }
-
-    //Manage data source
-    useEffect(() => {
-
-        const handleMessage = (message) => {
-            if (messageQueue.current.length >= maxMessages) { //Store the last 200 messages
-                messageQueue.current.shift()
-            }
-            messageQueue.current.push(message);
-        }
-        const source = new MessageSource();
-        source.addListener(handleMessage);
-
-        return () => {
-            source.close(); 
-        };
-
-    }, [])
-
-    useEffect(() => {
-
-        window.addEventListener('resize', resize);
-
-        paintInterval.current && clearInterval(paintInterval.current);
-        paintInterval.current = setInterval(dial, 100);
-
-        return () => { 
-            window.removeEventListener('resize', resize);
-            clearInterval(paintInterval.current);
-        };
-
-    }, [maxMessages]);
 
     const resize = () => {
 
@@ -88,16 +55,14 @@ function Matrix() {
             messageQueue.current = [];
             currentDisplayMessages.current = [];
 
-            setMaxMessages(canvasSize);
+            setNumberOfDisplayRows(canvasSize);
             setMaxIdx(maxIdx);
 
         }, 500)
 
     }
 
-    useEffect(resize, []);
-
-    dial = () => {
+    const dial = () => {
         let init_message = "#DIALING.....".split("");
         let index = dialIndex.current % init_message.length;
         if (canvas.current) {
@@ -109,14 +74,14 @@ function Matrix() {
             context.fillText(init_message[index], (canvas.current.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.current.height / 3); 
             dialIndex.current += 1;
 
-            if (messageQueue.current.length >= maxMessages) { //Show dialing message
+            if (messageQueue.current.length >= numberOfDisplayRows) { //Show dialing message
                 paintInterval.current && clearInterval(paintInterval.current);
                 paintInterval.current = setInterval(stream, 75);
             }
         }
     }
 
-    stream = () => {
+    const stream = () => {
         let cleanupLag = 50;
         let context = canvas.current.getContext("2d");
 
@@ -127,7 +92,7 @@ function Matrix() {
         context.fillStyle = "#0F0"; //green
         context.font = size + "px matrix";
 
-        for(let i = 0; i < maxMessages; i++) {
+        for(let i = 0; i < numberOfDisplayRows; i++) {
 
             if (!currentDisplayMessages.current[i]) {
                 let nextMessage = messageQueue.current.shift();
@@ -140,10 +105,9 @@ function Matrix() {
 
             var message = currentDisplayMessages.current[i];
 
-            if ((message.current() == 0) && (Math.random() < 0.5)) {
+            if ((message.current() === 0) && (Math.random() < 0.5)) {
                 continue;
             }
-
 
             if (vertical) {
                 context.fillStyle = "#000"; //black
@@ -173,6 +137,42 @@ function Matrix() {
         }
 
     };
+
+    //Determine the screen dimensions on mouunt
+    useEffect(resize, [vertical]);
+
+    //Manage data source
+    useEffect(() => {
+
+        const handleMessage = (message) => {
+            if (messageQueue.current.length >= numberOfDisplayRows) { //Store the last 200 messages
+                messageQueue.current.shift()
+            }
+            messageQueue.current.push(message);
+        }
+        const source = new MessageSource();
+        source.addListener(handleMessage);
+
+        return () => {
+            source.close(); 
+        };
+
+    }, [numberOfDisplayRows])
+
+    useEffect(() => {
+
+        window.addEventListener('resize', resize);
+
+        paintInterval.current && clearInterval(paintInterval.current);
+        paintInterval.current = setInterval(dial, 100);
+
+        return () => { 
+            window.removeEventListener('resize', resize);
+            clearInterval(paintInterval.current);
+        };
+
+    }, [numberOfDisplayRows]);
+
 
     return <canvas id='displayCanvas'/>;
 }

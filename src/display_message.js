@@ -1,9 +1,10 @@
 export default class DisplayMessage {
 
-    constructor(message) {
+    constructor(message, row) {
         this.text = message + "   ";
         this.currentIdx = 0;
-        this.offset = Math.floor(Math.random() * 5);
+        this.row = row;
+        //this.offset = Math.floor(Math.random() * 5);
     }
 
     current() {
@@ -16,7 +17,7 @@ export default class DisplayMessage {
     }
 
     getIdx() {
-        return this.currentIdx + this.offset;
+        return this.currentIdx;
     }
 
 }
