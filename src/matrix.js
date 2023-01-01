@@ -4,15 +4,30 @@
  * Inspired by Ryan Henszey's demo of canvas animation at http://timelessname.com/sandbox/matrix.html.
  */
 
+import { v4 as uuid } from 'uuid';
 import { useEffect, useRef, useState } from 'react';
-import { MessageSource } from './message_source_test';
+import { MessageSource } from './message_source';
 import DisplayMessage from './display_message';
 
-function Matrix() {
+const size = 13;
+const alpha = size / 200
 
-    const size = 13;
-    const alpha = size / 200
-    const maxMessageDensity = 1.5;
+//How many messages may display at once as a multiple of the number of display rows
+const maxMessageDensity = 1.5;
+
+//How many new messages may begin displaying in a single tic as a multiple of the number of display rows
+const maxNewMessagePercentagePerTic = 0.01;
+
+//How many trailing "fade-out" characters to display before clearing the message
+const cleanupLagNumberOfChars = 50;
+
+//How many messages to store in the buffer queue as a multiple of the total possible displayed messages
+const messageBufferPercentage = 2.0;
+
+//How far across the pane a message must reach before its line is available for a new message as a multiple of the pane size
+const messageMinFollowDistance = 0.5;
+
+function Matrix() {
 
     var vertical = false;  //Whether to scroll vertically or horizontally
 
@@ -20,7 +35,10 @@ function Matrix() {
     const messageQueue = useRef([]);
 
     //Messages currently displaying
-    const currentDisplayMessages = useRef([]);
+    const currentDisplayMessages = useRef(new Map());
+
+    //Locations that new messages may start painting
+    const availableNewDisplayRows = useRef(new Set());
 
     const canvas = useRef(null);
     const dialIndex = useRef(0);    //The current character displayed by dialing animation
@@ -53,10 +71,14 @@ function Matrix() {
             let maxIdx = Math.floor(vertical ? cols : rows);
 
             messageQueue.current = [];
-            currentDisplayMessages.current = [];
+            currentDisplayMessages.current = new Map();
 
             setNumberOfDisplayRows(canvasSize);
             setMaxIdx(maxIdx);
+
+            for (let i = 0; i < canvasSize; i++) {
+                availableNewDisplayRows.current.add(i); //All rows start available
+            }
 
         }, 500)
 
@@ -81,8 +103,25 @@ function Matrix() {
         }
     }
 
+    const paintNextCharacter = (displayMessage, context) => {
+        if (vertical) {
+            context.fillStyle = "#000"; //black
+            context.fillRect(displayMessage.row*size - size + 1, (displayMessage.getIdx()-cleanupLagNumberOfChars)*size,size, size);
+            context.fillStyle = getGreen(); //green
+            context.fillText(displayMessage.current(), displayMessage.row*size, (displayMessage.getIdx() * size) + size); //Rewrite previous char in green
+            context.fillStyle = "#FFF"; //white
+            context.fillText(displayMessage.next(), displayMessage.row*size, (displayMessage.getIdx() * size) + size); //Write newest char illuminated
+        } else {
+            context.fillStyle = "#000"; //black
+            context.fillRect((displayMessage.getIdx()-cleanupLagNumberOfChars)*size, displayMessage.row*size - size + 1, size, size);
+            context.fillStyle = getGreen(); //green
+            context.fillText(displayMessage.current(), (displayMessage.getIdx())*size, displayMessage.row*size); //Rewrite previous char in green
+            context.fillStyle = "#FFF"; //white
+            context.fillText(displayMessage.next(), displayMessage.getIdx()*size, displayMessage.row*size); //Write newest char illuminated
+        }
+    }
+
     const stream = () => {
-        let cleanupLag = 50;
         let context = canvas.current.getContext("2d");
 
         //Background is colored and translucent
@@ -92,49 +131,42 @@ function Matrix() {
         context.fillStyle = "#0F0"; //green
         context.font = size + "px matrix";
 
-        for(let i = 0; i < numberOfDisplayRows; i++) {
+        //Check available lines and add new messages
+        let i = 0;
+        let availableRows = ((availableNewDisplayRows.current.size > 0) && (currentDisplayMessages.current.size < Math.floor(numberOfDisplayRows * maxMessageDensity)));
+        let percentageFull = currentDisplayMessages.current.size / Math.floor(numberOfDisplayRows * maxMessageDensity);
 
-            if (!currentDisplayMessages.current[i]) {
-                let nextMessage = messageQueue.current.shift();
-                if (nextMessage) {
-                    currentDisplayMessages.current[i] = new DisplayMessage(nextMessage);
-                } else {
-                    continue;
-                }
+        //availableRows = availableRows && (Math.random() > percentageFull); //Less likely to start new messages while the screen is more full
+
+        availableRows = availableRows && Math.random() > 0.7;
+        while ((availableRows) && (i < Math.ceil(numberOfDisplayRows * maxNewMessagePercentagePerTic))) {
+            let rowIdx = Array.from(availableNewDisplayRows.current)[
+                Math.floor(Math.random() * availableNewDisplayRows.current.size) 
+            ];
+            availableNewDisplayRows.current.delete(rowIdx);
+
+            let messageText = messageQueue.current.shift();
+            if (messageText) {
+                let messageKey = uuid();
+                let displayMessage = new DisplayMessage(messageText, rowIdx, messageKey);
+                currentDisplayMessages.current.set(messageKey, displayMessage);
+            }
+            i++;
+        }
+
+        for (let [key,message] of currentDisplayMessages.current) {
+
+            paintNextCharacter(message, context);
+
+            if (message.getIdx() === Math.floor(maxIdx * messageMinFollowDistance)) {
+                availableNewDisplayRows.current.add(message.row);
             }
 
-            var message = currentDisplayMessages.current[i];
-
-            if ((message.current() === 0) && (Math.random() < 0.5)) {
-                continue;
-            }
-
-            if (vertical) {
-                context.fillStyle = "#000"; //black
-                context.fillRect(i*size - size + 1, (message.getIdx()-cleanupLag)*size,size, size);
-
-                context.fillStyle = getGreen(); //green
-                context.fillText(message.current(), i*size, (message.getIdx() * size) + size); //Rewrite previous char in green
-                context.fillStyle = "#FFF"; //white
-                context.fillText(message.next(), i*size, (message.getIdx() * size) + size); //Write newest char illuminated
-
-            } else {
-                context.fillStyle = "#000"; //black
-                context.fillRect((message.getIdx()-cleanupLag)*size, i*size - size + 1, size, size);
-
-                context.fillStyle = getGreen(); //green
-                context.fillText(message.current(), (message.getIdx())*size, i*size); //Rewrite previous char in green
-                context.fillStyle = "#FFF"; //white
-                context.fillText(message.next(), message.getIdx()*size, i*size); //Write newest char illuminated
-
-
-            }
-
-            if (message.getIdx() >= (maxIdx + cleanupLag)) {
-                currentDisplayMessages.current[i] = null;
+            if (message.getIdx() >= (maxIdx + cleanupLagNumberOfChars)) {
+                currentDisplayMessages.current.delete(key);
             }
             
-        }
+        };
 
     };
 
@@ -145,7 +177,8 @@ function Matrix() {
     useEffect(() => {
 
         const handleMessage = (message) => {
-            if (messageQueue.current.length >= numberOfDisplayRows) { //Store the last 200 messages
+            let maxMessages = Math.floor(numberOfDisplayRows * maxMessageDensity * messageBufferPercentage);
+            if (messageQueue.current.length >= maxMessages) {
                 messageQueue.current.shift()
             }
             messageQueue.current.push(message);

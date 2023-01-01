@@ -1,10 +1,13 @@
 export default class DisplayMessage {
 
-    constructor(message, row) {
+    constructor(message, row, key) {
+
         this.text = message + "   ";
         this.currentIdx = 0;
+
         this.row = row;
-        //this.offset = Math.floor(Math.random() * 5);
+        this.key = key;
+
     }
 
     current() {
