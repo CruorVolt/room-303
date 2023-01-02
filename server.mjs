@@ -1,10 +1,18 @@
 
-import {WebSocketServer} from 'ws';
+import { WebSocketServer } from 'ws';
 import Snoowrap from 'snoowrap';
 import SnooStorm from 'snoostorm';
 import got from 'got';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import config from './config/reddit_secret.mjs';
+
+var app = express();
+var server = app.listen(8080);
+var wss = new WebSocketServer({ server : server });
+app.use(express.static(path.dirname(fileURLToPath(import.meta.url)) + '/build'));
 
 const authHeader = "Basic " + btoa(config.clientId + ":" + config.clientSecret);
 
@@ -18,7 +26,7 @@ let url_params = [
 ];
  
 // Creating a new websocket server
-const wss = new WebSocketServer({ port: 8080 })
+//const wss = new WebSocketServer({ port: 8080 })
 
 let timer = null;
  

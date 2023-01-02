@@ -139,8 +139,6 @@ function Matrix() {
         let availableRows = ((availableNewDisplayRows.current.size > 0) && (currentDisplayMessages.current.size < Math.floor(numberOfDisplayRows * maxMessageDensity)));
         let percentageFull = currentDisplayMessages.current.size / Math.floor(numberOfDisplayRows * maxMessageDensity);
 
-        console.log(String(percentageFull).slice(0,4) + " : " + String(-Math.pow( percentageFull - 1, 2 ) + 1).slice(0,4));
-
         //availableRows = availableRows && Math.random() > (-Math.pow( percentageFull - 1, 2 ) + 1);
         availableRows = availableRows && Math.random() > percentageFull;
 
