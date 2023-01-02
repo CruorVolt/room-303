@@ -27,6 +27,9 @@ const messageBufferPercentage = 2.0;
 //How far across the pane a message must reach before its line is available for a new message as a multiple of the pane size
 const messageMinFollowDistance = 0.5;
 
+//Display streaming after receiving this many messages
+const minimumDisplayMessages = 10;
+
 function Matrix() {
 
     var vertical = false;  //Whether to scroll vertically or horizontally
@@ -96,7 +99,7 @@ function Matrix() {
             context.fillText(init_message[index], (canvas.current.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.current.height / 3); 
             dialIndex.current += 1;
 
-            if (messageQueue.current.length >= numberOfDisplayRows) { //Show dialing message
+            if (messageQueue.current.length >= minimumDisplayMessages) {
                 paintInterval.current && clearInterval(paintInterval.current);
                 paintInterval.current = setInterval(stream, 75);
             }
@@ -136,9 +139,11 @@ function Matrix() {
         let availableRows = ((availableNewDisplayRows.current.size > 0) && (currentDisplayMessages.current.size < Math.floor(numberOfDisplayRows * maxMessageDensity)));
         let percentageFull = currentDisplayMessages.current.size / Math.floor(numberOfDisplayRows * maxMessageDensity);
 
-        //availableRows = availableRows && (Math.random() > percentageFull); //Less likely to start new messages while the screen is more full
+        console.log(String(percentageFull).slice(0,4) + " : " + String(-Math.pow( percentageFull - 1, 2 ) + 1).slice(0,4));
 
-        availableRows = availableRows && Math.random() > 0.7;
+        //availableRows = availableRows && Math.random() > (-Math.pow( percentageFull - 1, 2 ) + 1);
+        availableRows = availableRows && Math.random() > percentageFull;
+
         while ((availableRows) && (i < Math.ceil(numberOfDisplayRows * maxNewMessagePercentagePerTic))) {
             let rowIdx = Array.from(availableNewDisplayRows.current)[
                 Math.floor(Math.random() * availableNewDisplayRows.current.size) 
