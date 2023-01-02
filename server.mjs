@@ -4,7 +4,7 @@ import Snoowrap from 'snoowrap';
 import SnooStorm from 'snoostorm';
 import got from 'got';
 
-import config from './../config/reddit_secret.mjs';
+import config from './config/reddit_secret.mjs';
 
 const authHeader = "Basic " + btoa(config.clientId + ":" + config.clientSecret);
 
