@@ -9,8 +9,9 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageSource } from './message_source';
 import DisplayMessage from './display_message';
 
-const size = 13;
-const alpha = size / 200
+const size = 12;
+const alpha = 0.065;
+const alphaLessColor = "#010101";
 
 //How many messages may display at once as a multiple of the number of display rows
 const maxMessageDensity = 1.5;
@@ -108,14 +109,14 @@ function Matrix() {
 
     const paintNextCharacter = (displayMessage, context) => {
         if (vertical) {
-            context.fillStyle = "#000"; //black
+            context.fillStyle = alphaLessColor; //black
             context.fillRect(displayMessage.row*size - size + 1, (displayMessage.getIdx()-cleanupLagNumberOfChars)*size,size, size);
             context.fillStyle = getGreen(); //green
             context.fillText(displayMessage.current(), displayMessage.row*size, (displayMessage.getIdx() * size) + size); //Rewrite previous char in green
             context.fillStyle = "#FFF"; //white
             context.fillText(displayMessage.next(), displayMessage.row*size, (displayMessage.getIdx() * size) + size); //Write newest char illuminated
         } else {
-            context.fillStyle = "#000"; //black
+            context.fillStyle = alphaLessColor; //black
             context.fillRect((displayMessage.getIdx()-cleanupLagNumberOfChars)*size, displayMessage.row*size - size + 1, size, size);
             context.fillStyle = getGreen(); //green
             context.fillText(displayMessage.current(), (displayMessage.getIdx())*size, displayMessage.row*size); //Rewrite previous char in green
