@@ -4,7 +4,7 @@
 }
 
 body {
-  background-color:rgba(0, 0, 0, 0.3);
+  background-color: #010101;
   margin: 0;
   overflow: hidden;
 
@@ -13,3 +13,25 @@ body {
 
   font-family: 'matrix';
 }
+
+.box-body {
+  position: relative;
+  z-index: 0;
+}
+
+.info-icon {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  color: #5C5;
+  cursor: pointer;
+  background-color: #010101;
+}
+
+.info-pane { 
+  color: orange;
+}
+
+.info-icon        { z-index: 2; }
+.info-pane        { z-index: 1; }
+.canvas-container { z-index: 0; }

@@ -7,9 +7,11 @@
 import { v4 as uuid } from 'uuid';
 import { useEffect, useRef, useState } from 'react';
 import { MessageSource } from './message_source';
+
+import getRandomAdvice from './life_advice';
 import DisplayMessage from './display_message';
 
-const size = 12;
+const size = 13;
 const alpha = 0.065;
 const alphaLessColor = "#010101";
 
@@ -84,23 +86,41 @@ function Matrix() {
                 availableNewDisplayRows.current.add(i); //All rows start available
             }
 
-        }, 500)
+            window.removeEventListener('resize', resize);
+            window.addEventListener('resize', resize);
+
+            let message = getRandomAdvice();
+
+            let context = canvas.current.getContext("2d");
+            context.fillStyle = "#010101";
+            context.fillRect(0, 0, canvas.current.width, canvas.current.height);
+
+            dialIndex.current = 0;
+            paintInterval.current && clearInterval(paintInterval.current);
+            paintInterval.current = setInterval( () => {dial(message);} , 100);
+
+            return () => { 
+                window.removeEventListener('resize', resize);
+                clearInterval(paintInterval.current);
+            };
+
+            }, 500)
 
     }
 
-    const dial = () => {
-        let init_message = "#DIALING.....".split("");
-        let index = dialIndex.current % init_message.length;
+    const dial = (message) => {
+        let init_message = message.split("");
+        let index = dialIndex.current;
         if (canvas.current) {
-            let context = canvas.current.getContext("2d");
-            context.fillStyle = "rgba(0, 0, 0, 0.3)"; //Background color and fadeout speed
-            context.fillRect(0, 0, canvas.current.width, canvas.current.height);
-            context.fillStyle = getGreen(); 
-            context.font = (size+5) + "px matrix";
-            context.fillText(init_message[index], (canvas.current.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.current.height / 3); 
-            dialIndex.current += 1;
+            if (index < init_message.length) {
+                let context = canvas.current.getContext("2d");
+                context.fillStyle = getGreen(); 
+                context.font = (size+5) + "px matrix";
+                context.fillText(init_message[index], (canvas.current.width / 2) - (init_message.length / 2 * size) + (index * size), canvas.current.height / 3); 
+                dialIndex.current += 1;
+            }
 
-            if (messageQueue.current.length >= minimumDisplayMessages) {
+            if ((index >= init_message.length) && (messageQueue.current.length >= minimumDisplayMessages)) {
                 paintInterval.current && clearInterval(paintInterval.current);
                 paintInterval.current = setInterval(stream, 75);
             }
@@ -108,21 +128,23 @@ function Matrix() {
     }
 
     const paintNextCharacter = (displayMessage, context) => {
+        let cleanupCoordinate = (displayMessage.getIdx()-cleanupLagNumberOfChars)*size;
         if (vertical) {
             context.fillStyle = alphaLessColor; //black
-            context.fillRect(displayMessage.row*size - size + 1, (displayMessage.getIdx()-cleanupLagNumberOfChars)*size,size, size);
+            context.fillRect(displayMessage.row*size - size + 1, cleanupCoordinate, size, size);
             context.fillStyle = getGreen(); //green
             context.fillText(displayMessage.current(), displayMessage.row*size, (displayMessage.getIdx() * size) + size); //Rewrite previous char in green
             context.fillStyle = "#FFF"; //white
             context.fillText(displayMessage.next(), displayMessage.row*size, (displayMessage.getIdx() * size) + size); //Write newest char illuminated
         } else {
             context.fillStyle = alphaLessColor; //black
-            context.fillRect((displayMessage.getIdx()-cleanupLagNumberOfChars)*size, displayMessage.row*size - size + 1, size, size);
+            context.fillRect(cleanupCoordinate, displayMessage.row*size - size + 1, size, size);
             context.fillStyle = getGreen(); //green
             context.fillText(displayMessage.current(), (displayMessage.getIdx())*size, displayMessage.row*size); //Rewrite previous char in green
             context.fillStyle = "#FFF"; //white
             context.fillText(displayMessage.next(), displayMessage.getIdx()*size, displayMessage.row*size); //Write newest char illuminated
         }
+        return cleanupCoordinate;
     }
 
     const stream = () => {
@@ -160,13 +182,14 @@ function Matrix() {
 
         for (let [key,message] of currentDisplayMessages.current) {
 
-            paintNextCharacter(message, context);
-
             if (message.getIdx() === Math.floor(maxIdx * messageMinFollowDistance)) {
                 availableNewDisplayRows.current.add(message.row);
             }
 
-            if (message.getIdx() >= (maxIdx + cleanupLagNumberOfChars)) {
+            let trailingCoord = paintNextCharacter(message, context);
+            let maxCoord = vertical ? canvas.current.clientHeight : canvas.current.clientWidth;
+
+            if (trailingCoord > maxCoord) {
                 currentDisplayMessages.current.delete(key);
             }
             
@@ -175,7 +198,7 @@ function Matrix() {
     };
 
     //Determine the screen dimensions on mouunt
-    useEffect(resize, [vertical]);
+    useEffect(resize, []);
 
     //Manage data source
     useEffect(() => {
@@ -195,21 +218,6 @@ function Matrix() {
         };
 
     }, [numberOfDisplayRows])
-
-    useEffect(() => {
-
-        window.addEventListener('resize', resize);
-
-        paintInterval.current && clearInterval(paintInterval.current);
-        paintInterval.current = setInterval(dial, 100);
-
-        return () => { 
-            window.removeEventListener('resize', resize);
-            clearInterval(paintInterval.current);
-        };
-
-    }, [numberOfDisplayRows]);
-
 
     return <canvas id='displayCanvas'/>;
 }
