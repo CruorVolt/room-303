@@ -29,7 +29,21 @@ body {
 }
 
 .info-pane { 
-  color: orange;
+  color: rgb(146, 202, 146);
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  background-color: #010101;
+  height: 400px;
+  width: 300px;
+  border-top: 2px solid #5C5;
+  border-right: 2px solid #5C5;
+  border-top-right-radius: 5px;
+  padding:10px;
+}
+
+.info-pane-item {
+  padding: 15px 5px;
 }
 
 .info-icon        { z-index: 2; }
