@@ -1,6 +1,7 @@
 import React from 'react';
 import {useState} from 'react';
 import ReactDOM from 'react-dom/client';
+import { TransitionGroup, CSSTransition } from 'react-transition-group';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
@@ -19,11 +20,13 @@ function MatrixBox() {
   let infoPane = null;
   if (showInfo) {
     infoPane = (
-      <div className='info-pane'> 
-        <div className='info-pane-item'> A real-time streaming sample of new submissions to Reddit. </div>
-        <div className='info-pane-item'><a href='https://github.com/CruorVolt/room-303'> Project Source </a> </div>
-        <div className='info-pane-item'> Made by <a href='https://anderslundgren.dev'> Anders Lundgren </a> </div>
-      </div>
+      <CSSTransition className='slide-in' timeout={{enter: 1, exit: 1}}>
+        <div className='info-pane'> 
+          <div className='info-pane-item'> A real-time streaming sample of new submissions to Reddit. </div>
+          <div className='info-pane-item'><a href='https://github.com/CruorVolt/room-303'> Project Source </a> </div>
+          <div className='info-pane-item'> Made by <a href='https://anderslundgren.dev'> Anders Lundgren </a> </div>
+        </div>
+      </CSSTransition>
     );
   }
 
@@ -40,7 +43,9 @@ function MatrixBox() {
         />
       </div>
 
-      {infoPane}
+      <TransitionGroup>
+        {infoPane}
+      </TransitionGroup>
 
       <div className='canvas-container'>
         <Matrix/>

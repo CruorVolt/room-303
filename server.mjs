@@ -29,18 +29,18 @@ let url_params = [
 //const wss = new WebSocketServer({ port: 8080 })
 
 let timer = null;
- 
+
 // Creating connection using websocket
 wss.on("connection", ws => {
 
-    console.log("new client connected");
+    console.log("Client connect");
 
     ws.on("message", data => {
         console.log(`Client has sent us: ${data}`)
     });
 
     ws.on("close", () => {
-        console.log("the client has connected");
+        console.log("Client disconnect");
         clearInterval(timer);
     });
 
@@ -60,7 +60,7 @@ wss.on("connection", ws => {
     );
 
     auth.then( (resp) => {
-      console.log(resp.body);
+      console.log("Token recieved: " + resp.body);
 
       const client = new Snoowrap({
         userAgent: "ROOM-303",
@@ -69,7 +69,7 @@ wss.on("connection", ws => {
       
       const submissions = new SnooStorm.SubmissionStream(client, {
         subreddit: "Popular",
-        limit: 100,
+        limit: 50,
         pollTime: 2000,
       });
 
@@ -80,7 +80,6 @@ wss.on("connection", ws => {
 
     }, (err) => {
         console.error(err);
-        process.exit();
     })
 
 });

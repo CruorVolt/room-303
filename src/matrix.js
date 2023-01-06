@@ -24,8 +24,8 @@ const maxNewMessagePercentagePerTic = 0.01;
 //How many trailing "fade-out" characters to display before clearing the message
 const cleanupLagNumberOfChars = 50;
 
-//How many messages to store in the buffer queue as a multiple of the total possible displayed messages
-const messageBufferPercentage = 2.0;
+//How many messages to store in the buffer queue
+const maxMessageBuffer = 1000;
 
 //How far across the pane a message must reach before its line is available for a new message as a multiple of the pane size
 const messageMinFollowDistance = 0.5;
@@ -169,12 +169,12 @@ function Matrix() {
             let rowIdx = Array.from(availableNewDisplayRows.current)[
                 Math.floor(Math.random() * availableNewDisplayRows.current.size) 
             ];
-            availableNewDisplayRows.current.delete(rowIdx);
 
             let messageText = messageQueue.current.shift();
             if (messageText) {
                 let messageKey = uuid();
                 let displayMessage = new DisplayMessage(messageText, rowIdx, messageKey);
+                availableNewDisplayRows.current.delete(rowIdx);
                 currentDisplayMessages.current.set(messageKey, displayMessage);
             }
             i++;
@@ -182,7 +182,7 @@ function Matrix() {
 
         for (let [key,message] of currentDisplayMessages.current) {
 
-            if (message.getIdx() === Math.floor(maxIdx * messageMinFollowDistance)) {
+            if (message.getIdx() > Math.floor(maxIdx * messageMinFollowDistance)) {
                 availableNewDisplayRows.current.add(message.row);
             }
 
@@ -204,8 +204,7 @@ function Matrix() {
     useEffect(() => {
 
         const handleMessage = (message) => {
-            let maxMessages = Math.floor(numberOfDisplayRows * maxMessageDensity * messageBufferPercentage);
-            if (messageQueue.current.length >= maxMessages) {
+            if (messageQueue.current.length >= maxMessageBuffer) {
                 messageQueue.current.shift()
             }
             messageQueue.current.push(message);
@@ -217,7 +216,7 @@ function Matrix() {
             source.close(); 
         };
 
-    }, [numberOfDisplayRows])
+    }, [])
 
     return <canvas id='displayCanvas'/>;
 }
