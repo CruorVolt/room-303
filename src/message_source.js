@@ -2,7 +2,6 @@ function MessageSource() {
 
     const connect = () => {
 
-        console.log('conenct');
         this.connection = new WebSocket(('ws://localhost:8080'));
 
         // Listen for messages
@@ -18,7 +17,6 @@ function MessageSource() {
         }
 
         this.connection.onclose = () => {
-            console.log('onclose');
             this.connection = null;
             setTimeout( connect, 500 );
         }
@@ -37,7 +35,6 @@ function MessageSource() {
         this.listeners = [];
         clearInterval(this.messageInterval); 
         this.connection.close();
-        console.log("CLOSED");
     }
 
 }

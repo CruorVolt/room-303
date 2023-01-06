@@ -9,79 +9,101 @@ import { fileURLToPath } from 'url';
 
 import config from './config/reddit_secret.mjs';
 
-var app = express();
-var server = app.listen(8080);
-var wss = new WebSocketServer({ server : server });
-app.use(express.static(path.dirname(fileURLToPath(import.meta.url)) + '/build'));
+var app = null;
+var server = null;
+var wss = null;
 
-const authHeader = "Basic " + btoa(config.clientId + ":" + config.clientSecret);
+function startServer() {
 
-let url_params = [
-  'grant_type=client_credentials',
-  'response_type=code',
-  'state=' + String(Math.random()).slice(2),
-  'redirect_uri=https%3A%2F%2Fanderslundgren.dev%2F',
-  'duration=permanent',
-  'scope=read'
-];
- 
-// Creating a new websocket server
-//const wss = new WebSocketServer({ port: 8080 })
+  try {
 
-let timer = null;
+    app = express();
+    server = app.listen(8080);
+    wss = new WebSocketServer({ server : server });
+    app.use(express.static(path.dirname(fileURLToPath(import.meta.url)) + '/build'));
 
-// Creating connection using websocket
-wss.on("connection", ws => {
+    const authHeader = "Basic " + btoa(config.clientId + ":" + config.clientSecret);
 
-    console.log("Client connect");
+    let url_params = [
+      'grant_type=client_credentials',
+      'response_type=code',
+      'state=' + String(Math.random()).slice(2),
+      'redirect_uri=https%3A%2F%2Fanderslundgren.dev%2F',
+      'duration=permanent',
+      'scope=read'
+    ];
+    
+    // Creating a new websocket server
+    //const wss = new WebSocketServer({ port: 8080 })
 
-    ws.on("message", data => {
-        console.log(`Client has sent us: ${data}`)
+    let timer = null;
+
+    // Creating connection using websocket
+    wss.on("connection", ws => {
+
+        console.log("Client connect");
+
+        ws.on("message", data => {
+            console.log(`Client has sent us: ${data}`)
+        });
+
+        ws.on("close", () => {
+            console.log("Client disconnect");
+            clearInterval(timer);
+        });
+
+        ws.onerror = function (err) {
+            console.warn(err);
+        }
+
+        let auth = got.post(
+          "https://www.reddit.com/api/v1/access_token?" + url_params.join('&'),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Authorization: authHeader
+            },
+            retry: {limit: 0}
+          }
+        );
+
+        auth.then( (resp) => {
+          console.log("Token recieved: " + resp.body);
+
+          const client = new Snoowrap({
+            userAgent: "ROOM-303",
+            accessToken: JSON.parse(resp.body).access_token
+          });
+          
+          const submissions = new SnooStorm.SubmissionStream(client, {
+            subreddit: "Popular",
+            limit: 50,
+            pollTime: 2000,
+          });
+
+          submissions.on("item", (item) => {
+            let message = item.subreddit.display_name + ": " + item.title;
+            ws.send(message);
+          });
+
+        }, (err) => {
+            console.error(err);
+        })
+
     });
 
-    ws.on("close", () => {
-        console.log("Client disconnect");
-        clearInterval(timer);
-    });
+    console.log("The WebSocket server is running on port 8080");
 
-    ws.onerror = function () {
-        console.log("Some Error occurred")
-    }
+  } catch (err) {
+    console.error(err);
+    console.warn("Server error, restarting...")
 
-    let auth = got.post(
-      "https://www.reddit.com/api/v1/access_token?" + url_params.join('&'),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: authHeader
-        },
-        retry: {limit: 0}
-      }
-    );
+    server && server.close();
+    wss && wss.close();
 
-    auth.then( (resp) => {
-      console.log("Token recieved: " + resp.body);
+    setTimeout(startServer, 2000);
+  }
 
-      const client = new Snoowrap({
-        userAgent: "ROOM-303",
-        accessToken: JSON.parse(resp.body).access_token
-      });
-      
-      const submissions = new SnooStorm.SubmissionStream(client, {
-        subreddit: "Popular",
-        limit: 50,
-        pollTime: 2000,
-      });
+}
 
-      submissions.on("item", (item) => {
-        let message = item.subreddit.display_name + ": " + item.title;
-        ws.send(message);
-      });
-
-    }, (err) => {
-        console.error(err);
-    })
-
-});
-
-console.log("The WebSocket server is running on port 8080");
+startServer();
