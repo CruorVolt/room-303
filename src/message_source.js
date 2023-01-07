@@ -4,7 +4,7 @@ function MessageSource() {
 
     const connect = () => {
 
-        this.connection = io( window.location.hostname + ":8080");
+        this.connection = io( 'http://' + window.location.hostname + ':8080', {transports: ['polling']});
 
         // Listen for messages
         this.connection.on('message', (message) => {
