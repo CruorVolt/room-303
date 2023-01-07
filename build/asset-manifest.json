@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/static/css/main.cce41508.css",
-    "main.js": "/static/js/main.32471abc.js",
+    "main.js": "/static/js/main.0986549f.js",
     "static/media/ocra-webfont.woff": "/static/media/ocra-webfont.0f8bb1cfdb11115f1f19.woff",
     "index.html": "/index.html",
     "main.cce41508.css.map": "/static/css/main.cce41508.css.map",
-    "main.32471abc.js.map": "/static/js/main.32471abc.js.map"
+    "main.0986549f.js.map": "/static/js/main.0986549f.js.map"
   },
   "entrypoints": [
     "static/css/main.cce41508.css",
-    "static/js/main.32471abc.js"
+    "static/js/main.0986549f.js"
   ]
 }

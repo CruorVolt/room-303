@@ -2,7 +2,7 @@ function MessageSource() {
 
     const connect = () => {
 
-        this.connection = new WebSocket(('wss://' + window.location.hostname + ":8080"));
+        this.connection = new WebSocket(('ws://' + window.location.hostname + ":8080"));
 
         // Listen for messages
         this.connection.addEventListener('message', (event) => {
