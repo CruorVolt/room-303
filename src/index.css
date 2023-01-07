@@ -14,6 +14,10 @@ body {
   font-family: 'matrix';
 }
 
+html, body, #app-root, .box-body {
+  height: 100%;
+}
+
 .box-body {
   position: relative;
   z-index: 0;
@@ -50,20 +54,7 @@ body {
 .info-pane        { z-index: 1; }
 .canvas-container { z-index: 0; }
 
-.slide-in-enter {
-  opacity: 0.01;
-}
-
-.slide-in-enter.slide-in-enter-active {
-  opacity: 1;
-  transition: opacity 500ms ease-in;
-}
-
-.slide-in-exit {
-  opacity: 1;
-}
-
-.slide-in-exit.slide-in-exit-active {
-  opacity: 0.01;
-  transition: opacity 500ms ease-in;
+.displayCanvas {
+  width: 100%;
+  height: 100%;
 }

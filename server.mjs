@@ -1,19 +1,19 @@
 
-import { WebSocketServer } from 'ws';
 import Snoowrap from 'snoowrap';
 import SnooStorm from 'snoostorm';
 import got from 'got';
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-import config from './config/reddit_secret.mjs';
+import { WebSocketServer } from 'ws';
+import { fileURLToPath } from 'url';
+import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 
 var app = null;
 var server = null;
 var wss = null;
 
-function startServer() {
+function startServer(clientId, clientSecret) {
 
   try {
 
@@ -22,7 +22,7 @@ function startServer() {
     wss = new WebSocketServer({ server : server });
     app.use(express.static(path.dirname(fileURLToPath(import.meta.url)) + '/build'));
 
-    const authHeader = "Basic " + btoa(config.clientId + ":" + config.clientSecret);
+    const authHeader = "Basic " + btoa(clientId + ":" + clientSecret);
 
     let url_params = [
       'grant_type=client_credentials',
@@ -101,9 +101,18 @@ function startServer() {
     server && server.close();
     wss && wss.close();
 
-    setTimeout(startServer, 2000);
+    setTimeout(() => { startServer(cliendId, clientSecret); }, 2000);
   }
 
 }
 
-startServer();
+const client = new SecretManagerServiceClient();
+
+async function waitForSecret() {
+  const [clientId] = await client.accessSecretVersion({name: 'projects/730860186624/secrets/reddit-client-id/versions/latest'});
+  const [clientSecret] = await client.accessSecretVersion({name: 'projects/730860186624/secrets/reddit-client-secret/versions/latest'})
+
+  startServer(clientId.payload.data, clientSecret.payload.data);
+}
+
+waitForSecret();
