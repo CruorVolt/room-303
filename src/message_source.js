@@ -1,25 +1,27 @@
+import { io } from 'socket.io-client';
+
 function MessageSource() {
 
     const connect = () => {
 
-        this.connection = new WebSocket(('ws://' + window.location.hostname + ":8080"));
+        this.connection = io( window.location.hostname + ":8080");
 
         // Listen for messages
-        this.connection.addEventListener('message', (event) => {
+        this.connection.on('message', (message) => {
             this.listeners.forEach((handler) => {
-                handler(event.data);
+                handler(message);
             })
         });
 
-        this.connection.onerror = (err) => {
+        this.connection.on('connection_error', (err) => {
             console.log(err);
-            this.connection.close();
-        }
+            this.connection.disconnect();
+        });
 
-        this.connection.onclose = () => {
+        this.connection.on('disconnect', () => {
             this.connection = null;
             setTimeout( connect, 500 );
-        }
+        });
 
     }
 

@@ -5,21 +5,25 @@ import got from 'got';
 import express from 'express';
 import path from 'path';
 
-import { WebSocketServer } from 'ws';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 
 var app = null;
 var server = null;
-var wss = null;
+var socket = null;
 
 function startServer(clientId, clientSecret) {
 
   try {
 
     app = express();
-    server = app.listen(8080);
-    wss = new WebSocketServer({ server : server });
+    server = createServer(app);
+    socket = new Server(server);
+
+    server.listen(8080, () => { })
+
     app.use(express.static(path.dirname(fileURLToPath(import.meta.url)) + '/build'));
 
     const authHeader = "Basic " + btoa(clientId + ":" + clientSecret);
@@ -33,28 +37,16 @@ function startServer(clientId, clientSecret) {
       'scope=read'
     ];
     
-    // Creating a new websocket server
-    //const wss = new WebSocketServer({ port: 8080 })
-
     let timer = null;
 
-    // Creating connection using websocket
-    wss.on("connection", ws => {
+    socket.on("connection", ws => {
 
         console.log("Client connect");
 
-        ws.on("message", data => {
-            console.log(`Client has sent us: ${data}`)
-        });
-
-        ws.on("close", () => {
+        ws.on("disconnect", () => {
             console.log("Client disconnect");
             clearInterval(timer);
         });
-
-        ws.onerror = function (err) {
-            console.warn(err);
-        }
 
         let auth = got.post(
           "https://www.reddit.com/api/v1/access_token?" + url_params.join('&'),
@@ -83,7 +75,7 @@ function startServer(clientId, clientSecret) {
 
           submissions.on("item", (item) => {
             let message = item.subreddit.display_name + ": " + item.title;
-            ws.send(message);
+            ws.emit('message', message);
           });
 
         }, (err) => {
@@ -92,14 +84,14 @@ function startServer(clientId, clientSecret) {
 
     });
 
-    console.log("The WebSocket server is running on port 8080");
+    console.log("socket.io initialized");
 
   } catch (err) {
     console.error(err);
     console.warn("Server error, restarting...")
 
     server && server.close();
-    wss && wss.close();
+    socket && socket.close();
 
     setTimeout(() => { startServer(cliendId, clientSecret); }, 2000);
   }
