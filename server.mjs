@@ -22,7 +22,7 @@ function startServer(clientId, clientSecret) {
     server = createServer(app);
     socket = new Server(server);
 
-    server.listen(8080, () => { })
+    server.listen(process.env.PORT || 8080, () => { })
 
     app.use(express.static(path.dirname(fileURLToPath(import.meta.url)) + '/build'));
 
