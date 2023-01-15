@@ -4,7 +4,7 @@ function MessageSource() {
 
     const connect = () => {
 
-        this.connection = io( window.location.hostname, {transports: ['polling']});
+        this.connection = io( undefined, {transports: ['polling']});
 
         // Listen for messages
         this.connection.on('message', (message) => {
