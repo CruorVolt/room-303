@@ -182,7 +182,7 @@ function Matrix() {
 
         for (let [key,message] of currentDisplayMessages.current) {
 
-            if (message.getIdx() > Math.floor(maxIdx * messageMinFollowDistance)) {
+            if (message.getIdx() === Math.floor(maxIdx * messageMinFollowDistance)) {
                 availableNewDisplayRows.current.add(message.row);
             }
 
